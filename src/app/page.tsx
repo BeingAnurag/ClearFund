@@ -1,14 +1,15 @@
 'use client'
 
 // 1. IMPORTS (These were missing or incomplete)
-import { Navbar } from '../components/Navbar';
+import { Navbar } from '../components/layout/Navbar';
+import { Footer } from '../components/layout/Footer';
 import { Hero } from '../components/hero/Hero';
 import { Metrics } from '../components/trust/Metrics';
 import { TrustFeatures } from '../components/trust/TrustFeatures';
 import { Spotlight } from '../components/campaign/Spotlight';
 import { Journey } from '../components/trust/Journey';
 import { ReadyToBuild } from '../components/cta/ReadyToBuild';
-import { Footer } from '../components/layout/Footer'; 
+
 
 export default function Home() {
   return (
