@@ -52,7 +52,7 @@ export default function VerificationPage() {
 
       <main className="max-w-7xl mx-auto px-6 pt-32 pb-24 relative overflow-hidden">
         
-        {/* Background Ambient Glow */}
+        {/* Background Ambient Glow (Top Right) */}
         <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-teal-900/20 rounded-full blur-[120px] pointer-events-none opacity-40"></div>
 
         {/* 1. PAGE HEADER */}
@@ -79,90 +79,103 @@ export default function VerificationPage() {
         <div className="grid lg:grid-cols-2 gap-20 items-start relative z-10">
           
           {/* LEFT COLUMN: Context & Metrics */}
-          <div className="space-y-12 lg:sticky lg:top-32">
-            <div className="prose prose-invert">
-              <p className="text-lg text-slate-400 leading-relaxed">
-                ClearFund replaces blind trust with cryptographic verification. Unlike traditional platforms where funds are transferred immediately to a bank account, our protocol enforces a strict, programmable set of rules.
-              </p>
-              <p className="text-lg text-slate-400 leading-relaxed">
-                Every action — from the initial identity verification to the final release of funds — is publicly auditable and mathematically enforced by smart contracts on the Ethereum blockchain.
-              </p>
-            </div>
+          {/* FIX 1: Added 'relative' here to contain the new bottom glow */}
+          <div className="space-y-12 lg:sticky lg:top-32 relative">
+            
+            {/* FIX 1: New subtle glow filler for the bottom left empty space */}
+            <div className="absolute -bottom-32 -left-20 w-72 h-72 bg-teal-900/10 rounded-full blur-[100px] pointer-events-none opacity-40 z-0"></div>
 
-            {/* TRUST METRICS */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 rounded-2xl bg-[#131823]/60 backdrop-blur-sm border border-white/5 relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative z-10">
-                  <div className="text-4xl font-bold text-white mb-1">0%</div>
-                  <div className="text-sm text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-500" /> Fraud Rate
+            <div className="relative z-10 space-y-12">
+              <div className="prose prose-invert">
+                <p className="text-lg text-slate-400 leading-relaxed">
+                  ClearFund replaces blind trust with cryptographic verification. Unlike traditional platforms where funds are transferred immediately to a bank account, our protocol enforces a strict, programmable set of rules.
+                </p>
+                <p className="text-lg text-slate-400 leading-relaxed">
+                  Every action — from the initial identity verification to the final release of funds — is publicly auditable and mathematically enforced by smart contracts on the Ethereum blockchain.
+                </p>
+              </div>
+
+              {/* TRUST METRICS */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 rounded-2xl bg-[#131823]/60 backdrop-blur-sm border border-white/5 relative group overflow-hidden hover:border-teal-500/20 transition-all duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10">
+                    <div className="text-4xl font-bold text-white mb-1">0%</div>
+                    <div className="text-sm text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-teal-500" /> Fraud Rate
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-[#131823]/60 backdrop-blur-sm border border-white/5 relative group overflow-hidden hover:border-blue-500/20 transition-all duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative z-10">
+                    <div className="text-4xl font-bold text-white mb-1">100%</div>
+                    <div className="text-sm text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
+                      <FileSearch className="w-4 h-4 text-blue-500" /> Traceability
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl bg-[#131823]/60 backdrop-blur-sm border border-white/5 relative group overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="relative z-10">
-                  <div className="text-4xl font-bold text-white mb-1">100%</div>
-                  <div className="text-sm text-slate-500 font-medium uppercase tracking-wider flex items-center gap-2">
-                    <FileSearch className="w-4 h-4 text-blue-500" /> Traceability
-                  </div>
-                </div>
+              {/* CTA SECTION */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Link 
+                  href="/campaigns"
+                  className="px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-teal-50 transition-all shadow-lg shadow-white/5 text-center hover:scale-105 active:scale-95 duration-300"
+                >
+                  Browse Verified Campaigns
+                </Link>
+                <Link 
+                  href="/audits"
+                  className="px-8 py-4 bg-transparent border border-white/10 text-white font-medium rounded-full hover:bg-white/5 transition-all flex items-center justify-center gap-2 group hover:border-white/30"
+                >
+                  View Live Audits <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </div>
-            </div>
-
-            {/* CTA SECTION */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link 
-                href="/campaigns"
-                className="px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-teal-50 transition-all shadow-lg shadow-white/5 text-center"
-              >
-                Browse Verified Campaigns
-              </Link>
-              <Link 
-                href="/audits"
-                className="px-8 py-4 bg-transparent border border-white/10 text-white font-medium rounded-full hover:bg-white/5 transition-all flex items-center justify-center gap-2 group"
-              >
-                View Live Audits <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
             </div>
           </div>
 
           {/* RIGHT COLUMN: Vertical Timeline */}
-          <div className="relative pl-8 md:pl-12 border-l border-white/10 space-y-16 py-4">
+          <div className="relative pl-8 md:pl-12 border-l border-white/10 space-y-16 py-4 my-4">
             {steps.map((item, i) => (
-              <div key={i} className={`relative group ${item.active ? 'opacity-100' : 'opacity-70 hover:opacity-100'} transition-opacity duration-500`}>
+              // FIX 2: Added group-hover logic to the parent container for smoother opacity transitions
+              <div key={i} className={`relative group transition-all duration-500 ${item.active ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}>
                 
                 {/* Timeline Node */}
-                <div className={`absolute -left-[45px] md:-left-[61px] top-0 w-10 h-10 rounded-full border-4 border-[#0B0F14] flex items-center justify-center transition-all duration-300 z-10
+                <div className={`absolute -left-[45px] md:-left-[61px] top-0 w-10 h-10 rounded-full border-4 border-[#0B0F14] flex items-center justify-center transition-all duration-500 z-10
                   ${item.active 
                     ? 'bg-teal-500 text-black shadow-[0_0_20px_rgba(20,184,166,0.4)] scale-110' 
-                    : 'bg-[#1A202C] text-slate-500 border-[#0B0F14]'
+                    // Added group-hover state for inactive nodes
+                    : 'bg-[#1A202C] text-slate-500 border-[#0B0F14] group-hover:border-teal-500/30 group-hover:text-teal-400 group-hover:bg-[#131823] group-hover:scale-105'
                   }`}>
                   <item.icon className="w-5 h-5" />
                 </div>
 
-                {/* Content Card */}
+                {/* Content Card - FIX 2: Added hover animations here */}
                 <div className={`
-                  p-8 rounded-2xl border transition-all duration-300
+                  p-8 rounded-2xl border transition-all duration-500 transform perspective-1000
                   ${item.active 
-                    ? 'bg-[#131823] border-teal-500/30 shadow-[0_0_30px_rgba(20,184,166,0.05)]' 
-                    : 'bg-[#0D1117] border-white/5 hover:border-white/10'
+                    // Active state: slightly boosted
+                    ? 'bg-[#131823] border-teal-500/40 shadow-[0_0_30px_rgba(20,184,166,0.1)] scale-[1.01]' 
+                    // Inactive state: Added hover for scale, translate, border, bg, and shadow
+                    : 'bg-[#0D1117] border-white/5 group-hover:bg-[#131823] group-hover:border-teal-500/30 group-hover:shadow-[0_0_25px_rgba(20,184,166,0.07)] group-hover:scale-[1.02] group-hover:-translate-y-1'
                   }
                 `}>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className={`text-xl font-bold ${item.active ? 'text-white' : 'text-slate-200'}`}>
+                    <h3 className={`text-xl font-bold transition-colors duration-300 ${item.active || 'group-hover:text-white'} ${item.active ? 'text-white' : 'text-slate-200'}`}>
                       {item.title}
                     </h3>
-                    <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider
-                      ${item.active ? 'bg-teal-500/10 text-teal-400' : 'bg-white/5 text-slate-500'}
+                    <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider transition-all duration-300
+                      ${item.active 
+                        ? 'bg-teal-500/10 text-teal-400' 
+                        : 'bg-white/5 text-slate-500 group-hover:bg-teal-500/10 group-hover:text-teal-400'}
                     `}>
                       Step {item.step}
                     </span>
                   </div>
                   
-                  <p className="text-slate-400 leading-relaxed text-sm md:text-base">
+                  <p className="text-slate-400 leading-relaxed text-sm md:text-base transition-colors duration-300 group-hover:text-slate-300">
                     {item.desc}
                   </p>
                 </div>
