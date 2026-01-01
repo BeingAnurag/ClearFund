@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  color: theme('colors.textPrimary');
+  background: theme('colors.background');
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility using your new tokens */
+.glass-panel {
+  background: rgba(18, 24, 32, 0.7); /* Based on surface color */
+  backdrop-filter: blur(12px);
+  border: 1px solid theme('colors.border');
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #FFFFFF, #9BA4B0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
