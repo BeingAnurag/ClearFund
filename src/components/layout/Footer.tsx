@@ -28,7 +28,7 @@ export const Footer = () => {
               <li><Link href="/campaigns" className="hover:text-teal-400 transition-colors">Browse Campaigns</Link></li>
               <li><Link href="/verification" className="hover:text-teal-400 transition-colors">How Verification Works</Link></li>
               <li><Link href="/audits" className="hover:text-teal-400 transition-colors">Real-Time Audits</Link></li>
-              <li><Link href="/submit" className="hover:text-teal-400 transition-colors">Submit a Project</Link></li>
+              <li><Link href="/campaigns/new" className="hover:text-teal-400 transition-colors">Submit a Project</Link></li>
             </ul>
           </div>
 

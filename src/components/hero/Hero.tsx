@@ -57,7 +57,7 @@ export const Hero = () => {
               Start Verified Campaign
             </Link>
             <Link 
-              href="/audits" className="group flex items-center space-x-2 px-8 py-4 bg-white/5 text-white font-bold rounded-xl border border-white/10 hover:bg-white/10 transition-all transform hover:scale-105">
+              href="/audits" className="group flex items-center space-x-2 px-8 py-4 bg-white/5 text-white font-bold rounded-xl border border-white/10 hover:border-teal-500 hover:text-teal-400 transition-all transform hover:bg-teal-500/10 hover:scale-105 active:scale-95">
               <span>View Audits</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
