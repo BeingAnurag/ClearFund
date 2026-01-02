@@ -1,3 +1,4 @@
+import Link from 'next/dist/client/link';
 import React from 'react';
 
 export const ReadyToBuild = () => {
@@ -17,14 +18,16 @@ export const ReadyToBuild = () => {
         
         <div className="flex flex-col sm:flex-row justify-center gap-6 pt-8">
           
-          <button className="px-10 py-4 bg-white text-black font-bold rounded-full transition-all duration-300 ease-out hover:bg-teal-500 hover:text-white hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.4)] active:scale-95 shadow-xl shadow-white/5">
+          <Link 
+            href="/campaigns/new" className="px-10 py-4 bg-white text-black font-bold rounded-full transition-all duration-300 ease-out hover:bg-teal-500 hover:text-white hover:scale-105 hover:shadow-[0_0_40px_rgba(20,184,166,0.4)] active:scale-95 shadow-xl shadow-white/5">
             Start a Verified Campaign
-          </button>
+          </Link>
 
         
-          <button className="px-10 py-4 border border-white/10 text-slate-300 font-medium rounded-full transition-all duration-300 ease-in-out hover:border-teal-500 hover:text-teal-400 hover:bg-teal-500/10 hover:scale-105 active:scale-95">
+          <Link 
+            href="/about" className="px-10 py-4 border border-white/10 text-slate-300 font-medium rounded-full transition-all duration-300 ease-in-out hover:border-teal-500 hover:text-teal-400 hover:bg-teal-500/10 hover:scale-105 active:scale-95">
             Explore Documentation
-          </button>
+          </Link>
         </div>
       </div>
     </section>

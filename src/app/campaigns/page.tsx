@@ -4,13 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-
 import { 
-  Search, Filter, ArrowUpRight, ArrowRight, ShieldCheck, 
-  Users, Clock, AlertCircle, BarChart3, ChevronDown 
+  Search, Filter, ArrowRight, ShieldCheck, 
+  Users, Clock, AlertCircle, Plus // Added Plus icon
 } from 'lucide-react';
 
-
+// Types
 interface Campaign {
   id: number;
   title: string;
@@ -22,10 +21,10 @@ interface Campaign {
   category: string;
   verified: boolean;
   status: 'Active' | 'Funded' | 'Ended';
-  image: string; //URL
+  image: string; // URL
 }
 
-
+// Mock Data Fallback
 const MOCK_CAMPAIGNS: Campaign[] = [
   {
     id: 1,
@@ -95,7 +94,6 @@ export default function CampaignsPage() {
         const res = await fetch('http://localhost:3001/api/campaigns');
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        // Fallback to mock if API returns empty or simple data for demo
         setCampaigns(data.length > 0 ? data : MOCK_CAMPAIGNS); 
       } catch (err) {
         console.warn("Backend offline, using fallback data");
@@ -129,11 +127,19 @@ export default function CampaignsPage() {
               Browse projects verified via Soulbound Tokens. All funds are held in milestone-based escrow smart contracts.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-4 items-center">
              <div className="px-3 py-1 bg-teal-900/20 border border-teal-500/20 rounded-full flex items-center gap-2 text-xs font-medium text-teal-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"/>
                 Live On-Chain Data
              </div>
+
+             {/* NEW BUTTON ADDED HERE */}
+             <Link 
+               href="/campaigns/new" 
+               className="px-5 py-2.5 bg-teal-500 text-black font-bold rounded-lg hover:bg-teal-400 transition-colors flex items-center gap-2 shadow-lg shadow-teal-500/10"
+             >
+               <Plus className="w-4 h-4" /> Start Campaign
+             </Link>
           </div>
         </div>
 
