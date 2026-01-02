@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 import { SPOTLIGHT_DATA, CategoryType } from '../../data/campaigns';
 
@@ -95,12 +96,21 @@ export const Spotlight = () => {
           </div>
 
           <div className="flex gap-4">
-            <button className="flex-1 py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-lg shadow-white/5">
+           
+            <Link 
+              href={`/campaigns/${campaign.id}`} 
+              className="flex-1 py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-lg shadow-white/5 text-center flex items-center justify-center"
+            >
               Donate Now
-            </button>
-            <button className="flex-1 py-4 border border-white/10 text-white font-medium rounded-xl hover:bg-white/5 transition-colors">
+            </Link>
+            
+            
+            <Link 
+              href={`/campaigns/${campaign.id}`} 
+              className="flex-1 py-4 border border-white/10 text-white font-medium rounded-xl hover:bg-white/5 transition-colors text-center flex items-center justify-center"
+            >
               View Details
-            </button>
+            </Link>
           </div>
         </div>
       </div>
