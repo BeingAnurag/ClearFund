@@ -1,0 +1,10 @@
+# Hardhat files
+cache/
+artifacts/
+typechain-types/
+
+# Environment variables
+.env
+
+# Deployment info
+deployment-info.json
