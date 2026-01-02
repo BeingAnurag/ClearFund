@@ -6,79 +6,10 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { 
   Search, Filter, ArrowRight, ShieldCheck, 
-  Users, Clock, AlertCircle, Plus // Added Plus icon
+  Users, Clock, AlertCircle, Plus 
 } from 'lucide-react';
 
-// Types
-interface Campaign {
-  id: number;
-  title: string;
-  description: string;
-  raised: number;
-  target: number;
-  donors: number;
-  daysLeft: number;
-  category: string;
-  verified: boolean;
-  status: 'Active' | 'Funded' | 'Ended';
-  image: string; // URL
-}
-
-// Mock Data Fallback
-const MOCK_CAMPAIGNS: Campaign[] = [
-  {
-    id: 1,
-    title: "Ocean Cleanup: Phase 4",
-    description: "Deploying autonomous cleaning arrays in the Great Pacific Garbage Patch with verifiable impact tracking.",
-    raised: 1250000,
-    target: 2000000,
-    donors: 3420,
-    daysLeft: 12,
-    category: "Sustainability",
-    verified: true,
-    status: 'Active',
-    image: "https://images.unsplash.com/photo-1621451537084-482c73073a0f?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 2,
-    title: "Decentralized Science Hub",
-    description: "Open source research facility for bio-hacking and longevity research governed by DAO voting.",
-    raised: 45000,
-    target: 50000,
-    donors: 120,
-    daysLeft: 5,
-    category: "Research",
-    verified: true,
-    status: 'Active',
-    image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 3,
-    title: "Urban Vertical Gardens",
-    description: "Transforming unused city rooftops into sustainable food sources using hydroponic systems.",
-    raised: 12000,
-    target: 100000,
-    donors: 45,
-    daysLeft: 28,
-    category: "Infrastructure",
-    verified: false,
-    status: 'Active',
-    image: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&q=80"
-  },
-  {
-    id: 4,
-    title: "Ethereum Edu-Node Network",
-    description: "Setting up lightweight nodes in developing regions to support network health and education.",
-    raised: 150000,
-    target: 150000,
-    donors: 890,
-    daysLeft: 0,
-    category: "Technology",
-    verified: true,
-    status: 'Funded',
-    image: "https://images.unsplash.com/photo-1639322537228-f710d846310a?auto=format&fit=crop&q=80"
-  }
-];
+import { ALL_CAMPAIGNS, Campaign } from '../../data/campaigns';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -94,10 +25,10 @@ export default function CampaignsPage() {
         const res = await fetch('http://localhost:3001/api/campaigns');
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
-        setCampaigns(data.length > 0 ? data : MOCK_CAMPAIGNS); 
+        setCampaigns(data.length > 0 ? data : ALL_CAMPAIGNS); 
       } catch (err) {
         console.warn("Backend offline, using fallback data");
-        setCampaigns(MOCK_CAMPAIGNS);
+        setCampaigns(ALL_CAMPAIGNS);
       } finally {
         setLoading(false);
       }
@@ -227,8 +158,8 @@ export default function CampaignsPage() {
                    <div className="mt-auto space-y-4">
                      <div>
                        <div className="flex justify-between text-xs font-medium mb-2">
-                         <span className="text-white">${campaign.raised.toLocaleString()}</span>
-                         <span className="text-slate-500">of ${campaign.target.toLocaleString()}</span>
+                         <span className="text-white">${campaign.raised.toLocaleString('en-US')}</span>
+                         <span className="text-slate-500">of ${campaign.target.toLocaleString('en-US')}</span>
                        </div>
                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                          <div 
