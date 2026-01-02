@@ -14,7 +14,6 @@ import {
   ChevronDown, 
   ChevronUp, 
   Box,
-  Wallet,
   Lock,
   ArrowRightLeft
 } from 'lucide-react';
@@ -75,8 +74,8 @@ const AUDIT_LOGS: AuditEvent[] = [
 ];
 
 export default function AuditsPage() {
-  // Change: Allow expandedId to be null or number (Accordion style)
-  const [expandedId, setExpandedId] = useState<number | null>(1); // Default first one open
+  // Accordion Logic
+  const [expandedId, setExpandedId] = useState<number | null>(1); 
   const [filterType, setFilterType] = useState('All');
 
   const toggleExpand = (id: number) => {
@@ -128,13 +127,16 @@ export default function AuditsPage() {
             {CAMPAIGNS.map((campaign) => (
               <div 
                 key={campaign.id}
-                className={`bg-[#131823] border rounded-xl overflow-hidden transition-all duration-300 group
-                  ${expandedId === campaign.id ? 'border-teal-500/30 shadow-[0_0_20px_rgba(20,184,166,0.05)]' : 'border-white/5 hover:border-white/10'}
+                className={`bg-[#131823] border rounded-xl overflow-hidden transition-all duration-300 group relative z-0
+                  ${expandedId === campaign.id 
+                    ? 'border-teal-500/30 shadow-[0_0_20px_rgba(20,184,166,0.05)]' 
+                    : 'border-white/5 hover:border-white/10'
+                  }
                 `}
               >
                 {/* Card Header - ALWAYS VISIBLE INFO */}
                 <div 
-                  className="p-6 flex items-center justify-between cursor-pointer"
+                  className="p-6 flex items-center justify-between cursor-pointer relative z-10 bg-[#131823]"
                   onClick={() => toggleExpand(campaign.id)}
                 >
                   <div className="space-y-1">
@@ -142,9 +144,9 @@ export default function AuditsPage() {
                       <h3 className="text-lg font-bold text-white group-hover:text-teal-400 transition-colors">{campaign.name}</h3>
                       {campaign.sbtStatus === 'Verified' && (
                         <span title="SBT Verified">
-                      <CheckCircle2 className="w-4 h-4 text-teal-500" />
-                      </span>
-             )}
+                           <CheckCircle2 className="w-4 h-4 text-teal-500" />
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
                       <FileCode className="w-3 h-3" />
@@ -152,59 +154,66 @@ export default function AuditsPage() {
                     </div>
                   </div>
 
-                  {/* FIX: Quick Stats Visible in Header */}
+                  {/* Quick Stats Visible in Header */}
                   <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
                       <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Raised</div>
                       <div className="text-sm font-mono text-white">{campaign.raised}</div>
                     </div>
-                    <div className={`p-2 rounded-lg transition-all duration-300 ${expandedId === campaign.id ? 'bg-teal-500/10 text-teal-400' : 'bg-white/5 text-slate-400'}`}>
-                      {expandedId === campaign.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    <div className={`p-2 rounded-lg transition-all duration-300 ${expandedId === campaign.id ? 'bg-teal-500/10 text-teal-400 rotate-180' : 'bg-white/5 text-slate-400'}`}>
+                      <ChevronDown className="w-4 h-4" />
                     </div>
                   </div>
                 </div>
 
-                {/* Expanded Details */}
-                <div className={`
-                  border-t border-white/5 bg-[#0D1117]/50 overflow-hidden transition-all duration-300 ease-in-out
-                  ${expandedId === campaign.id ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}
-                `}>
-                  <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-4">
-                    {/* Funds Locked */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                        <Lock className="w-3 h-3" /> Funds Locked
+                {/* Expanded Details - GRID ANIMATION FIX */}
+                <div 
+                  className={`
+                    grid transition-[grid-template-rows,opacity] duration-300 ease-out
+                    ${expandedId === campaign.id ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
+                  `}
+                >
+                  <div className="overflow-hidden">
+                    {/* Inner content with border at top */}
+                    <div className="border-t border-white/5 bg-[#0D1117]/50 p-6 grid grid-cols-2 gap-y-6 gap-x-4">
+                      
+                      {/* Funds Locked */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                          <Lock className="w-3 h-3" /> Funds Locked
+                        </div>
+                        <div className="text-lg font-mono text-teal-400 font-medium">{campaign.locked}</div>
                       </div>
-                      <div className="text-lg font-mono text-teal-400 font-medium">{campaign.locked}</div>
-                    </div>
-                    
-                    {/* Funds Released */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                        <ArrowRightLeft className="w-3 h-3" /> Released
+                      
+                      {/* Funds Released */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                          <ArrowRightLeft className="w-3 h-3" /> Released
+                        </div>
+                        <div className="text-lg font-mono text-white font-medium">{campaign.released}</div>
                       </div>
-                      <div className="text-lg font-mono text-white font-medium">{campaign.released}</div>
-                    </div>
 
-                    {/* Milestones */}
-                    <div className="col-span-2 space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">Milestone Progress</span>
-                        <span className="text-white font-mono">{campaign.milestones}</span>
+                      {/* Milestones */}
+                      <div className="col-span-2 space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">Milestone Progress</span>
+                          <span className="text-white font-mono">{campaign.milestones}</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-teal-500 w-[40%] rounded-full"></div>
+                        </div>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-teal-500 w-[40%] rounded-full"></div>
+                      
+                      {/* Action Buttons */}
+                      <div className="col-span-2 flex gap-3 mt-2">
+                        <button className="flex-1 px-3 py-2 text-xs font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center justify-center gap-2 transition-colors">
+                          <ExternalLink className="w-3 h-3" /> Contract
+                        </button>
+                        <button className="flex-1 px-3 py-2 text-xs font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center justify-center gap-2 transition-colors">
+                          <Activity className="w-3 h-3" /> Transactions
+                        </button>
                       </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="col-span-2 flex gap-3 mt-2">
-                      <button className="flex-1 px-3 py-2 text-xs font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center justify-center gap-2 transition-colors">
-                        <ExternalLink className="w-3 h-3" /> Contract
-                      </button>
-                      <button className="flex-1 px-3 py-2 text-xs font-medium bg-white/5 hover:bg-white/10 border border-white/10 rounded flex items-center justify-center gap-2 transition-colors">
-                        <Activity className="w-3 h-3" /> Transactions
-                      </button>
+
                     </div>
                   </div>
                 </div>
@@ -213,7 +222,7 @@ export default function AuditsPage() {
           </div>
         </div>
 
-        {/* 3. LIVE AUDIT FEED (Unchanged) */}
+        {/* 3. LIVE AUDIT FEED */}
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-[#131823] p-4 rounded-xl border border-white/5">
             <div className="flex items-center gap-2 w-full md:w-auto">
