@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "hardhat:compile": "hardhat compile",
+    "hardhat:test": "hardhat test",
+    "hardhat:deploy": "hardhat run scripts/deploy.ts --network sepolia",
+    "hardhat:deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
+    "hardhat:verify": "hardhat verify --network sepolia",
+    "hardhat:console": "hardhat console --network sepolia"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.16",
@@ -23,6 +29,7 @@
     "wagmi": "^3.1.4"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -31,6 +38,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "hardhat": "^2.28.2",
     "nodemon": "^3.1.11",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
