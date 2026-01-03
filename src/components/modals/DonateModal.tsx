@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, ShieldCheck, Wallet, Loader2, CheckCircle2 } from 'lucide-react';
-import { useAccount, useConnect } from 'wagmi';
+import React, { useState, useEffect } from 'react';
+import { X, ShieldCheck, Wallet, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
 import { Campaign } from '../../data/campaigns';
+import { ESCROW_ABI } from '../../lib/contracts';
 
 interface DonateModalProps {
   campaign: Campaign;
@@ -15,34 +17,67 @@ type Step = 'INPUT' | 'CONFIRM' | 'SUCCESS';
 
 export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => {
   const { isConnected } = useAccount();
-  
-  const { connectors, connect } = useConnect(); 
+  const { connectors, connect } = useConnect();
 
+  // --- Wagmi Hooks for Real Transactions ---
+  const { 
+    data: hash, 
+    error: writeError, 
+    writeContract, 
+    isPending: isWalletLoading 
+  } = useWriteContract();
+
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed 
+  } = useWaitForTransactionReceipt({ 
+    hash 
+  });
+
+  // --- Local State ---
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('INPUT');
-  const [isLoading, setIsLoading] = useState(false);
-  const [txHash, setTxHash] = useState('');
+
+  // Watch for Blockchain Success to update UI
+  useEffect(() => {
+    if (isConfirmed) {
+      setStep('SUCCESS');
+    }
+  }, [isConfirmed]);
 
   if (!isOpen) return null;
 
+  // --- Handlers ---
+
   const handleConnect = () => {
-    // Basic connection trigger - usually calls the first connector (MetaMask/Injected)
-    const connector = connectors[0];
+    const connector = connectors[0]; // Connects to the first available wallet (MetaMask usually)
     if (connector) connect({ connector });
   };
 
-  const handleDonate = () => {
+  const handleReviewClick = () => {
+    if (!amount || parseFloat(amount) <= 0) return;
     setStep('CONFIRM');
   };
 
-  const confirmTransaction = () => {
-    setIsLoading(true);
-    // Simulate Blockchain Transaction
-    setTimeout(() => {
-      setTxHash('0x71c...9a21'); // Mock Hash
-      setIsLoading(false);
-      setStep('SUCCESS');
-    }, 2000);
+  const handleConfirmTransaction = () => {
+    if (!campaign.contractAddress) {
+      console.error("No contract address found for this campaign");
+      return;
+    }
+
+    // 🚀 THE REAL TRANSACTION CALL
+    writeContract({
+      address: campaign.contractAddress as `0x${string}`,
+      abi: ESCROW_ABI,
+      functionName: 'contribute',
+      value: parseEther(amount), // Converts string "0.1" to Wei (BigInt)
+    });
+  };
+
+  const handleClose = () => {
+    setStep('INPUT');
+    setAmount('');
+    onClose();
   };
 
   return (
@@ -50,7 +85,7 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Modal Content */}
@@ -59,7 +94,7 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/5">
           <h3 className="text-lg font-bold text-white">Back this Project</h3>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+          <button onClick={handleClose} className="text-slate-500 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -105,7 +140,7 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
               </div>
 
               <button 
-                onClick={handleDonate}
+                onClick={handleReviewClick}
                 disabled={!amount || parseFloat(amount) <= 0}
                 className="w-full py-4 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -121,7 +156,9 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-400">Escrow Contract</span>
-                  <span className="text-teal-400 font-mono">{campaign.contractAddress}</span>
+                  <span className="text-teal-400 font-mono truncate w-32 md:w-auto">
+                    {campaign.contractAddress || "0x..."}
+                  </span>
                 </div>
                 <div className="h-px bg-white/10" />
                 <div className="flex justify-between text-lg font-bold">
@@ -130,12 +167,24 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
                 </div>
               </div>
 
+              {/* Error Message */}
+              {writeError && (
+                <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex gap-3 text-red-400 text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <p>{writeError.message.split('\n')[0]}</p>
+                </div>
+              )}
+
               <button 
-                onClick={confirmTransaction}
-                disabled={isLoading}
-                className="w-full py-4 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-colors flex items-center justify-center gap-2"
+                onClick={handleConfirmTransaction}
+                disabled={isWalletLoading || isConfirming}
+                className="w-full py-4 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isLoading ? (
+                {isWalletLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Check Wallet...
+                  </>
+                ) : isConfirming ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" /> Processing...
                   </>
@@ -154,11 +203,18 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
               
               <div className="bg-[#0B0F14] rounded-lg p-3 mb-6 flex justify-between items-center text-xs">
                 <span className="text-slate-500">Transaction Hash</span>
-                <span className="text-teal-400 font-mono">{txHash}</span>
+                <a 
+                  href={`https://sepolia.etherscan.io/tx/${hash}`}
+                  target="_blank"
+                  rel="noreferrer" 
+                  className="text-teal-400 font-mono hover:underline"
+                >
+                  {hash?.slice(0, 10)}...{hash?.slice(-8)}
+                </a>
               </div>
 
               <button 
-                onClick={onClose}
+                onClick={handleClose}
                 className="w-full py-3 bg-[#131823] border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-colors"
               >
                 Close
