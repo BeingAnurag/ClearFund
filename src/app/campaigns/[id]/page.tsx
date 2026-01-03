@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { useParams } from 'next/navigation'; // Use useParams for client components
 import { Navbar } from '../../../components/layout/Navbar'; 
 import { Footer } from '../../../components/layout/Footer';
-import { ALL_CAMPAIGNS, Campaign } from '../../../data/campaigns';
+import { ALL_CAMPAIGNS } from '../../../data/campaigns'; // Keep for mock images/titles
 import { DonateModal } from '../../../components/modals/DonateModal';
 import { 
   ShieldCheck, 
@@ -19,15 +19,61 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export default function CampaignDetailsPage({ params }: { params: { id: string } }) {
-  const campaign = ALL_CAMPAIGNS.find((c) => c.id === params.id);
+// --- Web3 Imports ---
+import { useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
+import { ESCROW_ABI } from '../../../lib/contracts';
+
+export default function CampaignDetailsPage() {
+  const params = useParams();
+  const campaignAddress = params.id as `0x${string}`; // Treat URL ID as Address
   const [isDonateModalOpen, setDonateModalOpen] = useState(false);
 
-  if (!campaign) {
-    return notFound();
-  }
+  // 1. Try to find mock metadata (Image/Title) if it exists
+  const mockData = ALL_CAMPAIGNS.find((c) => c.id === params.id);
 
-  const percentage = Math.min((campaign.raised / campaign.target) * 100, 100);
+  // 2. Fetch REAL Data from Blockchain
+  const { data: totalRaisedWei } = useReadContract({
+    address: campaignAddress,
+    abi: ESCROW_ABI,
+    functionName: 'totalRaised',
+    query: {
+      refetchInterval: 3000, // Auto-update UI every 3 seconds
+    },
+  });
+
+  const { data: goalWei } = useReadContract({
+    address: campaignAddress,
+    abi: ESCROW_ABI,
+    functionName: 'goal',
+  });
+
+  // 3. Process Data (Convert BigInt to String)
+  const raisedETH = totalRaisedWei ? formatEther(totalRaisedWei) : '0';
+  const goalETH = goalWei ? formatEther(goalWei) : (mockData?.target.toString() || '0');
+  
+  // Calculate Progress
+  const percentage = goalETH !== '0' 
+    ? Math.min((Number(raisedETH) * 100) / Number(goalETH), 100) 
+    : 0;
+
+  // 4. Construct the Final Display Object
+  // If it's a new blockchain campaign, use placeholders. If it's a mock one, use mock images.
+  const campaign = {
+    title: mockData?.title || "Live Blockchain Campaign",
+    description: mockData?.description || "This is a live campaign tracked directly from the Ethereum Sepolia network. Donations are real and secured by the smart contract.",
+    image: mockData?.image || "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop",
+    category: mockData?.category || "Blockchain",
+    creatorWallet: mockData?.creatorWallet || campaignAddress,
+    donors: mockData?.donors || 0,
+    daysLeft: mockData?.daysLeft || 30,
+    milestones: mockData?.milestones || [
+      { id: 1, title: 'Initial Deployment', amount: Number(goalETH) * 0.2, status: 'Pending' },
+      { id: 2, title: 'Development Phase', amount: Number(goalETH) * 0.8, status: 'Locked' }
+    ],
+    verified: true,
+    contractAddress: campaignAddress
+  };
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-slate-300 font-sans selection:bg-teal-500/30">
@@ -85,11 +131,13 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
                            ms.status === 'Pending' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
                            'bg-slate-800 text-slate-500'
                         }`}>
-                          {ms.id}
+                           {ms.id}
                         </div>
                         <div>
                            <div className="text-white font-medium">{ms.title}</div>
-                           <div className="text-xs text-slate-500 font-mono">Unlocks: ${ms.amount}</div>
+                           <div className="text-xs text-slate-500 font-mono">
+                             Unlocks: {typeof ms.amount === 'number' ? `${ms.amount.toFixed(2)} ETH` : ms.amount}
+                           </div>
                         </div>
                       </div>
                       <div className={`text-xs font-bold px-2 py-1 rounded ${
@@ -145,16 +193,23 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
             <div className="bg-[#131823] border border-white/10 rounded-2xl p-6 shadow-2xl">
               <div className="mb-6">
                  <div className="flex justify-between items-end mb-2">
-                    <span className="text-3xl font-bold text-white">${campaign.raised.toLocaleString('en-US')}</span>
-                    <span className="text-sm text-slate-500 mb-1">of ${campaign.target.toLocaleString('en-US')}</span>
+                    <span className="text-3xl font-bold text-white font-mono">
+                      {Number(raisedETH).toFixed(2)} <span className="text-lg text-teal-500">ETH</span>
+                    </span>
+                    <span className="text-sm text-slate-500 mb-1">
+                       of {Number(goalETH).toFixed(2)} ETH goal
+                    </span>
                  </div>
                  <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
-                    <div className="h-full bg-teal-500 rounded-full" style={{ width: `${percentage}%` }}></div>
+                    <div 
+                      className="h-full bg-teal-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(20,184,166,0.5)]" 
+                      style={{ width: `${percentage}%` }}
+                    ></div>
                  </div>
                  <div className="flex justify-between text-sm">
                     <div className="flex items-center gap-2 text-slate-400">
                        <Users className="w-4 h-4" /> 
-                       <span className="text-white font-medium">{campaign.donors.toLocaleString('en-US')}</span> Donors
+                       <span className="text-white font-medium">{campaign.donors}</span> Donors
                     </div>
                     <div className="flex items-center gap-2 text-slate-400">
                        <Clock className="w-4 h-4" />
@@ -170,17 +225,22 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
                  >
                    Donate Now
                  </button>
-                 <button className="w-full py-3 bg-[#0B0F14] border border-white/10 text-white font-medium rounded-xl hover:bg-white/5 transition-colors flex items-center justify-center gap-2 group">
+                 <a 
+                   href={`https://sepolia.etherscan.io/address/${campaignAddress}`}
+                   target="_blank"
+                   rel="noreferrer"
+                   className="w-full py-3 bg-[#0B0F14] border border-white/10 text-white font-medium rounded-xl hover:bg-white/5 transition-colors flex items-center justify-center gap-2 group"
+                 >
                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-white" />
                    View Contract
-                 </button>
+                 </a>
               </div>
 
               <div className="mt-6 pt-6 border-t border-white/5">
                  <div className="text-xs text-slate-500 uppercase font-bold mb-2">Creator Wallet</div>
-                 <div className="flex items-center gap-2 font-mono text-sm text-teal-400 bg-teal-500/5 px-3 py-2 rounded-lg border border-teal-500/10">
-                    <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></div>
-                    {campaign.creatorWallet}
+                 <div className="flex items-center gap-2 font-mono text-xs text-teal-400 bg-teal-500/5 px-3 py-2 rounded-lg border border-teal-500/10 truncate">
+                    <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse shrink-0"></div>
+                    <span className="truncate">{campaign.creatorWallet}</span>
                  </div>
               </div>
             </div>
@@ -200,6 +260,7 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
 
       {/* Client-side Modal */}
       <DonateModal 
+        // @ts-ignore - Temporary ignore for type mismatch between Mock/Real data shapes
         campaign={campaign} 
         isOpen={isDonateModalOpen} 
         onClose={() => setDonateModalOpen(false)} 
