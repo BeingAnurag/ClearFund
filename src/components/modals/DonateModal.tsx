@@ -2,10 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Wallet, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+
+import { supabase } from '../../lib/supabase';
 import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { Campaign } from '../../data/campaigns';
 import { ESCROW_ABI } from '../../lib/contracts';
+
+
+interface Campaign {
+  id?: number | string;
+  title: string;
+  contractAddress?: string;
+}
 
 interface DonateModalProps {
   campaign: Campaign;
@@ -16,10 +24,10 @@ interface DonateModalProps {
 type Step = 'INPUT' | 'CONFIRM' | 'SUCCESS';
 
 export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => {
-  const { isConnected } = useAccount();
+  
+  const { address: userAddress, isConnected } = useAccount();
   const { connectors, connect } = useConnect();
 
-  // --- Wagmi Hooks for Real Transactions ---
   const { 
     data: hash, 
     error: writeError, 
@@ -34,23 +42,59 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
     hash 
   });
 
-  // --- Local State ---
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('INPUT');
 
-  // Watch for Blockchain Success to update UI
+  
   useEffect(() => {
-    if (isConfirmed) {
+    if (isConfirmed && hash) {
       setStep('SUCCESS');
+      
+      const saveDonation = async () => {
+        if (!userAddress || !campaign.contractAddress) return;
+
+        try {
+          
+          let dbCampaignId = null;
+          
+          const { data: campaignData } = await supabase
+            .from('campaigns')
+            .select('id')
+            .eq('contract_address', campaign.contractAddress)
+            .single();
+
+          if (campaignData) {
+             dbCampaignId = campaignData.id;
+          }
+
+          
+          const { error } = await supabase
+            .from('donations')
+            .insert({
+              amount_eth: amount,
+              campaign_id: dbCampaignId, 
+              campaign_title: campaign.title,
+              donor_wallet: userAddress, 
+              transaction_hash: hash
+            });
+            
+          if (error) console.error("Supabase Error:", error);
+          else console.log("✅ Donation saved to history");
+
+        } catch (err) {
+          console.error("Save failed:", err);
+        }
+      };
+
+      saveDonation();
     }
-  }, [isConfirmed]);
+  }, [isConfirmed, hash, amount, campaign, userAddress]);
 
   if (!isOpen) return null;
 
-  // --- Handlers ---
-
+  // Handlers
   const handleConnect = () => {
-    const connector = connectors[0]; // Connects to the first available wallet (MetaMask usually)
+    const connector = connectors[0];
     if (connector) connect({ connector });
   };
 
@@ -61,16 +105,15 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
 
   const handleConfirmTransaction = () => {
     if (!campaign.contractAddress) {
-      console.error("No contract address found for this campaign");
+      console.error("No contract address found");
       return;
     }
 
-    // 🚀 THE REAL TRANSACTION CALL
     writeContract({
       address: campaign.contractAddress as `0x${string}`,
       abi: ESCROW_ABI,
       functionName: 'contribute',
-      value: parseEther(amount), // Converts string "0.1" to Wei (BigInt)
+      value: parseEther(amount),
     });
   };
 
@@ -82,16 +125,13 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
         onClick={handleClose}
       />
 
-      {/* Modal Content */}
       <div className="relative w-full max-w-md bg-[#131823] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/5">
           <h3 className="text-lg font-bold text-white">Back this Project</h3>
           <button onClick={handleClose} className="text-slate-500 hover:text-white transition-colors">
@@ -99,7 +139,6 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6">
           {!isConnected ? (
             <div className="text-center py-8">
@@ -107,7 +146,7 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
                 <Wallet className="w-8 h-8 text-teal-500" />
               </div>
               <h4 className="text-xl font-bold text-white mb-2">Connect Wallet</h4>
-              <p className="text-slate-400 mb-6 text-sm">You need to connect a Web3 wallet to securely transfer funds to the escrow contract.</p>
+              <p className="text-slate-400 mb-6 text-sm">You need to connect a Web3 wallet to securely transfer funds.</p>
               <button 
                 onClick={handleConnect}
                 className="w-full py-3 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-colors"
@@ -167,7 +206,6 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
                 </div>
               </div>
 
-              {/* Error Message */}
               {writeError && (
                 <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex gap-3 text-red-400 text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -181,13 +219,9 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
                 className="w-full py-4 bg-teal-500 text-black font-bold rounded-xl hover:bg-teal-400 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isWalletLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Check Wallet...
-                  </>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Check Wallet...</>
                 ) : isConfirming ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" /> Processing...
-                  </>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
                 ) : (
                   'Confirm & Donate'
                 )}
@@ -222,7 +256,6 @@ export const DonateModal = ({ campaign, isOpen, onClose }: DonateModalProps) => 
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
