@@ -2,11 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation'; // Use useParams for client components
+import { useParams } from 'next/navigation'; 
 import { Navbar } from '../../../components/layout/Navbar'; 
 import { Footer } from '../../../components/layout/Footer';
-import { ALL_CAMPAIGNS } from '../../../data/campaigns'; // Keep for mock images/titles
+import { ALL_CAMPAIGNS } from '../../../data/campaigns'; 
 import { DonateModal } from '../../../components/modals/DonateModal';
+import { CreatorPanel } from '../../../components/campaign/CreatorPanel';
+
 import { 
   ShieldCheck, 
   Users, 
@@ -20,26 +22,26 @@ import {
 } from 'lucide-react';
 
 // --- Web3 Imports ---
-import { useReadContract } from 'wagmi';
+import { useAccount, useReadContract } from 'wagmi'; 
 import { formatEther } from 'viem';
 import { ESCROW_ABI } from '../../../lib/contracts';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
-  const campaignAddress = params.id as `0x${string}`; // Treat URL ID as Address
+  const campaignAddress = params.id as `0x${string}`;
   const [isDonateModalOpen, setDonateModalOpen] = useState(false);
+  
+  // Get the Current User's Wallet
+  const { address: userWallet } = useAccount();
 
-  // 1. Try to find mock metadata (Image/Title) if it exists
+  // --- Fetch Data ---
   const mockData = ALL_CAMPAIGNS.find((c) => c.id === params.id);
 
-  // 2. Fetch REAL Data from Blockchain
   const { data: totalRaisedWei } = useReadContract({
     address: campaignAddress,
     abi: ESCROW_ABI,
     functionName: 'totalRaised',
-    query: {
-      refetchInterval: 3000, // Auto-update UI every 3 seconds
-    },
+    query: { refetchInterval: 2000 },
   });
 
   const { data: goalWei } = useReadContract({
@@ -48,20 +50,26 @@ export default function CampaignDetailsPage() {
     functionName: 'goal',
   });
 
-  // 3. Process Data (Convert BigInt to String)
+  
   const raisedETH = totalRaisedWei ? formatEther(totalRaisedWei) : '0';
   const goalETH = goalWei ? formatEther(goalWei) : (mockData?.target.toString() || '0');
   
-  // Calculate Progress
   const percentage = goalETH !== '0' 
     ? Math.min((Number(raisedETH) * 100) / Number(goalETH), 100) 
     : 0;
 
-  // 4. Construct the Final Display Object
-  // If it's a new blockchain campaign, use placeholders. If it's a mock one, use mock images.
+  
+  const isCreator = userWallet && mockData?.creatorWallet 
+    ? userWallet.toLowerCase() === mockData.creatorWallet.toLowerCase() 
+    : userWallet && campaignAddress 
+      ? true 
+      : false; 
+
+  const isGoalMet = Number(raisedETH) >= Number(goalETH);
+
   const campaign = {
     title: mockData?.title || "Live Blockchain Campaign",
-    description: mockData?.description || "This is a live campaign tracked directly from the Ethereum Sepolia network. Donations are real and secured by the smart contract.",
+    description: mockData?.description || "This is a live campaign tracked directly from the Ethereum Sepolia network.",
     image: mockData?.image || "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop",
     category: mockData?.category || "Blockchain",
     creatorWallet: mockData?.creatorWallet || campaignAddress,
@@ -85,6 +93,14 @@ export default function CampaignDetailsPage() {
         <Link href="/campaigns" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-white mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Campaigns
         </Link>
+
+        {/*  CREATOR ADMIN PANEL  */}
+        {isCreator && (
+           <CreatorPanel 
+             contractAddress={campaignAddress} 
+             isGoalMet={isGoalMet} 
+           />
+        )}
 
         {/* Hero Section */}
         <div className="grid lg:grid-cols-[1fr_400px] gap-12">
@@ -185,7 +201,6 @@ export default function CampaignDetailsPage() {
                   </div>
                </div>
             </div>
-
           </div>
 
           {/* RIGHT: Sticky Sidebar */}
@@ -252,15 +267,13 @@ export default function CampaignDetailsPage() {
                </p>
             </div>
           </div>
-
         </div>
-
       </main>
       <Footer />
 
-      {/* Client-side Modal */}
+      
       <DonateModal 
-        // @ts-ignore - Temporary ignore for type mismatch between Mock/Real data shapes
+        // @ts-ignore
         campaign={campaign} 
         isOpen={isDonateModalOpen} 
         onClose={() => setDonateModalOpen(false)} 

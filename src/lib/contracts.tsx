@@ -1,9 +1,6 @@
-// src/lib/contracts.ts
-
 // Replace this string with the address inside your deployment-info.json
 export const FACTORY_ADDRESS = "0xEE1294B69Eb795b6AD877be34a9Bd4Edf8074562";
 
-// This is the "Menu" that tells your app what functions are available
 export const FACTORY_ABI = [
   {
     "inputs": [],
@@ -184,6 +181,22 @@ export const ESCROW_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  // Withdraw Function 
+  {
+    "inputs": [],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  // Refund Function
+  {
+    "inputs": [],
+    "name": "refund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ] as const;
