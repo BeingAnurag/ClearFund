@@ -1,0 +1,18 @@
+{
+  "network": "sepolia",
+  "timestamp": "2026-01-03T07:15:03.844Z",
+  "deployer": "0xa68c19a0a08a72720107887d3061051184e24731",
+  "contracts": {
+    "ClearFundFactory": "0xEE1294B69Eb795b6AD877be34a9Bd4Edf8074562",
+    "SampleCampaign": "0x337D0a256219A73FBBf3567AA697D040432d10C8"
+  },
+  "sampleCampaignDetails": {
+    "title": "ClearFund Demo: Clean Water Initiative",
+    "category": "Sustainability",
+    "creator": "0xa68c19a0a08a72720107887d3061051184e24731",
+    "verifier": "0xa68c19a0a08a72720107887d3061051184e24731",
+    "goalAmount": "10.0 ETH",
+    "deadline": "2026-02-02T07:14:00.000Z",
+    "milestones": 4
+  }
+}

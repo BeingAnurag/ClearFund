@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
 import { 
@@ -14,14 +15,19 @@ import {
   AlertTriangle,
   FileText,
   ChevronRight,
-  Info
+  Info,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
-export default function NewCampaignPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
+import { FACTORY_ADDRESS, FACTORY_ABI } from '../../../lib/contracts';
 
-  // Form State
+export default function NewCampaignPage() {
+  const router = useRouter();
+
+  // --- Form State ---
   const [formData, setFormData] = useState({
     title: '',
     category: 'Sustainability',
@@ -30,10 +36,28 @@ export default function NewCampaignPage() {
     duration: '30',
   });
 
-  // Milestone State
+  // Milestone State (Visual only for V1 - typically added post-deployment)
   const [milestones, setMilestones] = useState([
     { title: 'Initial Mobilization', percent: 20, description: '' }
   ]);
+
+  // --- Web3 Hooks ---
+  const { 
+    data: hash, 
+    error: writeError, 
+    writeContract, 
+    isPending: isWalletTriggered 
+  } = useWriteContract();
+
+  const { 
+    isLoading: isConfirming, 
+    isSuccess: isConfirmed 
+  } = useWaitForTransactionReceipt({ 
+    hash 
+  });
+
+  // Derived Loading State
+  const isSubmitting = isWalletTriggered || isConfirming;
 
   // Handlers
   const addMilestone = () => {
@@ -46,17 +70,31 @@ export default function NewCampaignPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      window.scrollTo(0, 0);
-    }, 1500);
+    
+    // Basic Validation
+    if (!formData.target || !formData.title) return;
+
+    try {
+      // Call the Smart Contract
+      writeContract({
+        address: FACTORY_ADDRESS,
+        abi: FACTORY_ABI,
+        functionName: 'createCampaign',
+        args: [
+          formData.title,
+          formData.category,
+          "QmHashPlaceholder", // TODO: Integrate IPFS upload here later
+          parseEther(formData.target), // Converts "5" ETH to Wei
+          BigInt(formData.duration)
+        ],
+      });
+    } catch (err) {
+      console.error("Submission Failed:", err);
+    }
   };
 
-  // --- Success State (Post-Submission) ---
-  if (isSubmitted) {
+  // --- Success State (Post-Blockchain Confirmation) ---
+  if (isConfirmed) {
     return (
       <div className="min-h-screen bg-[#0B0F14] text-slate-300 font-sans">
         <Navbar />
@@ -64,25 +102,37 @@ export default function NewCampaignPage() {
           <div className="w-20 h-20 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-teal-500/20">
             <CheckCircle2 className="w-10 h-10 text-teal-500" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-4">Submission Under Review</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">Campaign Deployed!</h1>
           <p className="text-lg text-slate-400 mb-8 max-w-xl mx-auto">
-            Your campaign proposal has been securely logged. Our community validators and compliance engine are now reviewing your milestones and identity verification (SBT).
+            Your campaign smart contract has been successfully deployed to the blockchain. 
+            It is now live and ready to accept transparent contributions.
           </p>
+          
           <div className="bg-[#131823] border border-white/10 rounded-xl p-6 mb-10 max-w-lg mx-auto text-left">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-slate-500">Reference ID</span>
-              <span className="font-mono text-white">#CF-2026-8X92</span>
+              <span className="text-sm text-slate-500">Transaction Hash</span>
+              <a 
+                href={`https://sepolia.etherscan.io/tx/${hash}`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="font-mono text-teal-400 hover:underline text-sm truncate w-32 md:w-auto"
+              >
+                {hash?.slice(0, 10)}...{hash?.slice(-8)}
+              </a>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500">Est. Review Time</span>
-              <span className="text-white">24 - 48 Hours</span>
+              <span className="text-sm text-slate-500">Status</span>
+              <span className="text-green-400 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Confirmed
+              </span>
             </div>
           </div>
+
           <Link 
             href="/campaigns"
             className="px-8 py-3 bg-teal-500 text-black font-bold rounded-lg hover:bg-teal-400 transition-colors"
           >
-            Return to Dashboard
+            Go to Campaign Dashboard
           </Link>
         </main>
         <Footer />
@@ -90,7 +140,7 @@ export default function NewCampaignPage() {
     );
   }
 
-  // --- Form State ---
+  // --- Form UI ---
   return (
     <div className="min-h-screen bg-[#0B0F14] text-slate-300 selection:bg-teal-500/30 font-sans">
       <Navbar />
@@ -119,9 +169,20 @@ export default function NewCampaignPage() {
           </div>
         </div>
 
+        {/* 3. Error Display (If Wallet Transaction Fails) */}
+        {writeError && (
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl mb-8 flex gap-3 text-red-400 animate-in fade-in slide-in-from-top-2">
+             <AlertCircle className="w-5 h-5 shrink-0" />
+             <div>
+               <p className="font-bold text-sm">Transaction Failed</p>
+               <p className="text-xs opacity-80">{writeError.message.split('\n')[0]}</p>
+             </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-12">
           
-          {/* 3. Campaign Details */}
+          {/* Campaign Details Section */}
           <section className="space-y-6">
             <div className="flex items-center gap-2 border-b border-white/10 pb-4 mb-6">
               <FileText className="w-5 h-5 text-teal-500" />
@@ -173,7 +234,7 @@ export default function NewCampaignPage() {
                 <label className="text-sm font-medium text-slate-400">Target Amount (ETH)</label>
                 <input 
                   type="number" 
-                  step="0.01"
+                  step="0.001"
                   required
                   placeholder="0.00"
                   className="w-full bg-[#131823] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-teal-500/50 transition-colors font-mono"
@@ -195,7 +256,7 @@ export default function NewCampaignPage() {
             </div>
           </section>
 
-          {/* 4. Milestones */}
+          {/* Milestones Section (Visual Only for now) */}
           <section className="space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div className="flex items-center gap-2">
@@ -222,13 +283,13 @@ export default function NewCampaignPage() {
                   <div className="grid md:grid-cols-[2fr_1fr] gap-4 mb-4">
                     <input 
                       type="text" 
-                      placeholder="Milestone Title (e.g. Prototype Complete)"
+                      placeholder="Milestone Title"
                       className="bg-[#0B0F14] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-teal-500/50 focus:outline-none"
                     />
                     <div className="relative">
                       <input 
                         type="number" 
-                        placeholder="Fund Release %"
+                        placeholder="%"
                         className="w-full bg-[#0B0F14] border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-teal-500/50 focus:outline-none"
                         value={ms.percent}
                         onChange={(e) => {
@@ -255,7 +316,7 @@ export default function NewCampaignPage() {
             </div>
           </section>
 
-          {/* 5. Identity & Docs */}
+          {/* Identity & Docs Section */}
           <section className="space-y-6">
             <div className="flex items-center gap-2 border-b border-white/10 pb-4 mb-6">
               <Wallet className="w-5 h-5 text-teal-500" />
@@ -283,18 +344,9 @@ export default function NewCampaignPage() {
                 </div>
               </div>
             </div>
-
-            <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-teal-500/30 transition-colors cursor-pointer bg-[#131823]/50">
-              <UploadCloud className="w-10 h-10 text-slate-500 mx-auto mb-4" />
-              <p className="text-white font-medium mb-1">Upload Project Proposal</p>
-              <p className="text-sm text-slate-500 mb-4">PDF, DOCX, or Slides (Max 10MB)</p>
-              <button type="button" className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-white/10">
-                Browse Files
-              </button>
-            </div>
           </section>
 
-          {/* 6. Submit */}
+          {/* Submit Button */}
           <div className="pt-8 border-t border-white/10">
             <div className="flex items-start gap-3 mb-8">
               <input type="checkbox" required className="mt-1 w-4 h-4 rounded bg-[#131823] border-white/20 text-teal-500 focus:ring-0 focus:ring-offset-0" />
@@ -308,15 +360,31 @@ export default function NewCampaignPage() {
               disabled={isSubmitting}
               className="w-full py-4 bg-teal-500 text-black font-bold text-lg rounded-xl hover:bg-teal-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Verifying...' : 'Submit Campaign for Verification'}
-              {!isSubmitting && <ChevronRight className="w-5 h-5" />}
+              {isWalletTriggered ? (
+                <>
+                  <Loader2 className="animate-spin w-5 h-5" /> Check Your Wallet...
+                </>
+              ) : isConfirming ? (
+                <>
+                  <Loader2 className="animate-spin w-5 h-5" /> Deploying to Blockchain...
+                </>
+              ) : (
+                <>
+                  Launch Campaign <ChevronRight className="w-5 h-5" />
+                </>
+              )}
             </button>
+            
+            {hash && isConfirming && (
+              <p className="text-center text-xs text-slate-500 mt-4 font-mono">
+                Transaction Pending: {hash.slice(0, 10)}...
+              </p>
+            )}
           </div>
 
         </form>
       </main>
-
-      <Footer />
+      <Footer/>
     </div>
   );
 }
