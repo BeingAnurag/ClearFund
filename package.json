@@ -15,6 +15,7 @@
     "hardhat:console": "hardhat console --network sepolia"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.89.0",
     "@tanstack/react-query": "^5.90.16",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",

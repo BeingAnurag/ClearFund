@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '../../../components/layout/Navbar';
 import { Footer } from '../../../components/layout/Footer';
+import { supabase } from '../../../lib/supabase';
+import { useAccount } from 'wagmi';
 import { 
   ShieldAlert, 
   Wallet, 
@@ -62,35 +64,64 @@ export default function NewCampaignPage() {
   const isSubmitting = isWalletTriggered || isConfirming;
 
   
+  const { address: creatorWallet } = useAccount();
+
+  // --- Auto-Detect Address & Save to Supabase ---
   useEffect(() => {
     if (isConfirmed && receipt) {
-      try {
-        
-        for (const log of receipt.logs) {
-          try {
-            
-            const event = decodeEventLog({
-              abi: FACTORY_ABI,
-              data: log.data,
-              topics: log.topics, 
-            });
-            
-            
-            if (event.eventName === 'CampaignCreated') {
-             
-              setDeployedAddress(event.args.campaignAddress);
-              break; 
+      const processDeployment = async () => {
+        try {
+          // 1. Loop through logs to find the new Address
+          let newAddress = null;
+          
+          for (const log of receipt.logs) {
+            try {
+              const event = decodeEventLog({
+                abi: FACTORY_ABI,
+                data: log.data,
+                topics: log.topics, 
+              });
+              
+              if (event.eventName === 'CampaignCreated') {
+                // @ts-ignore
+                newAddress = event.args.campaignAddress;
+                setDeployedAddress(newAddress);
+                break; 
+              }
+            } catch (e) {
+              continue;
             }
-          } catch (e) {
-            
-            continue;
           }
+
+          // 2. If address found, save to Supabase immediately
+          if (newAddress) {
+             console.log("Saving to Supabase:", newAddress);
+             
+             const { error } = await supabase
+               .from('campaigns')
+               .insert({
+                 title: formData.title,
+                 description: formData.description,
+                 category: formData.category,
+                 target_eth: formData.target, 
+                 contract_address: newAddress,
+                 image_url: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000", // Placeholder for now
+                 creator_wallet: creatorWallet,
+                 status: 'active'
+               });
+             
+             if (error) throw error;
+             console.log("✅ Campaign saved to DB!");
+          }
+
+        } catch (err) {
+          console.error("Error processing deployment:", err);
         }
-      } catch (err) {
-        console.error("Error parsing logs:", err);
-      }
+      };
+
+      processDeployment();
     }
-  }, [isConfirmed, receipt]);
+  }, [isConfirmed, receipt, formData, creatorWallet]);
 
   // Handlers
   const addMilestone = () => {
