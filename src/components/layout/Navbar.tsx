@@ -10,7 +10,6 @@ export const Navbar = () => {
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
   
-  // Hydration fix state
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -31,7 +30,7 @@ export const Navbar = () => {
 
         {/* 2. Center: Navigation Links (Hidden on mobile) */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-          {['Campaigns', 'Verification', 'Audits', 'About'].map((item) => (
+          {['Campaigns', 'Verification', 'Audits'].map((item) => (
             <Link 
               key={item} 
               href={`/${item.toLowerCase()}`}
@@ -41,15 +40,22 @@ export const Navbar = () => {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 transition-all group-hover:w-full" />
             </Link>
           ))}
+
+          {/* Portfolio Link */}
+          <Link 
+            href="/profile"
+            className="hover:text-teal-400 text-slate-300 transition-colors relative group"
+          >
+            My Portfolio
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-teal-500 transition-all group-hover:w-full" />
+          </Link>
         </div>
         
-        {/* 3. Right: Wallet Button */}
         <button 
           onClick={() => isConnected ? disconnect() : connect({ connector: injected() })}
           className="flex items-center gap-2 px-4 py-2 rounded-lg border border-teal-500/30 text-teal-400 hover:bg-teal-500/10 transition-all text-sm font-medium"
         >
           <Wallet className="w-4 h-4" />
-          {/* Hydration safe rendering */}
           {mounted && isConnected 
             ? <span className="font-mono">{address?.slice(0,6)}...{address?.slice(-4)}</span> 
             : 'Connect Wallet'
